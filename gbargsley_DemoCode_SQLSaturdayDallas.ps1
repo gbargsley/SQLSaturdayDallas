@@ -21,11 +21,13 @@ $ComputerName = 'DESKTOP-EBH9MR8'
 $dev2016 = "localhost\dev2016"
 $prd2016 = "localhost\prd2016"
 $prd2017 = "localhost\prd2017"
+$sql2016 = "localhost\sql2016"
+$sql2017 = "localhost\sql2017"
 
 
 # Get connections from Registered Servers (CMS) 
 $RegisteredServers = Get-DbaRegisteredServer -SqlInstance $CmsInstance
-$RegisteredServers | Select-Object ServerName
+$RegisteredServers | Select-Object ServerName | Out-GridView
 
 
 # Max Memory Setting
@@ -39,7 +41,7 @@ Get-DbaSpConfigure -SqlInstance $singleServer | Out-GridView
 $sourceConfig = Get-DbaSpConfigure -SqlInstance $dev2016 
 $destConfig = Get-DbaSpConfigure -SqlInstance $prd2016 
 
-Compare-Object -ReferenceObject $sourceConfig -DifferenceObject $destConfig -Property DisplayName, RunningValue -PassThru | Sort-Object DisplayName | Select-Object DisplayName, RunningValue, ServerName
+Compare-Object -ReferenceObject $sourceConfig -DifferenceObject $destConfig -Property DisplayName, RunningValue -PassThru | Sort-Object DisplayName | Select-Object DisplayName, RunningValue, ServerName | Out-GridView
 
 
 # TempDB Configuration
@@ -47,15 +49,15 @@ Test-DbaTempDbConfiguration -SqlInstance $dev2016 | Select-Object SqlInstance, R
 
 
 # Startup Parameters
-Get-DbaStartupParameter -SqlInstance $dev2016
-Set-DbaStartupParameter -SqlInstance $dev2016 -TraceFlags 3226 -Confirm:$false
+Get-DbaStartupParameter -SqlInstance $dev2016 | Out-GridView
+Set-DbaStartupParameter -SqlInstance $dev2016 -TraceFlags 3226 -Confirm:$false | Out-GridView
 
 
 # DBA Orphan Files
-$SQLServers | Find-DbaOrphanedFile
+$SQLServers | Find-DbaOrphanedFile | Out-GridView
 
 # DBA Orphan User
-Get-DbaOrphanUser -SqlInstance $prd2017
+Get-DbaOrphanUser -SqlInstance $prd2017 | Out-GridView
 Repair-DbaOrphanUser -SqlInstance $prd2017
 
 
@@ -74,8 +76,28 @@ Find-DbaAgentJob -SqlInstance $SQLServers -JobName dbatools_magic | Out-GridView
 
 
 # Support Tools
-Install-DbaMaintenanceSolution -SqlInstance $SQLServers -Database DBA -CleanupTime 72 -BackupLocation C:\Temp -InstallJobs -ReplaceExisting 
+Install-DbaMaintenanceSolution -SqlInstance $SQLServers -Database DBA -CleanupTime 72 -BackupLocation C:\Temp -InstallJobs -ReplaceExisting | Out-GridView 
 
-Install-DbaWhoIsActive -SqlInstance $SQLServers -Database DBA
+Install-DbaWhoIsActive -SqlInstance $SQLServers -Database DBA | Out-GridView
 
-Install-DbaFirstResponderKit -SqlInstance $SQLServers -Database DBA
+Install-DbaFirstResponderKit -SqlInstance $SQLServers -Database DBA | Out-GridView
+
+
+# You've probably heard about how easy migrations can be with dbatools. Here's an example 
+$startDbaMigrationSplat = @{
+    Source = $sql2016
+    Destination = $sql2017
+    BackupRestore = $true
+    NetworkShare = 'C:\temp\backups'
+    NoSaRename = $true
+    NoLinkedServers = $true
+    NoSysDbUserObjects = $true
+    NoCredentials = $true
+    NoBackupDevices = $true
+    NoEndPoints = $true
+    WithReplace = $true
+    SetSourceReadOnly = $true
+}
+		
+#Start-DbaMigration @startDbaMigrationSplat -Force | Select * | Out-GridView
+Start-DbaMigration @startDbaMigrationSplat | Select * | Out-GridView
