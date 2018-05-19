@@ -49,8 +49,8 @@ Test-DbaTempDbConfiguration -SqlInstance $dev2016 | Select-Object SqlInstance, R
 
 
 # Startup Parameters
-Get-DbaStartupParameter -SqlInstance $dev2016 | Out-GridView
-Set-DbaStartupParameter -SqlInstance $dev2016 -TraceFlags 3226 -Confirm:$false | Out-GridView
+Get-DbaStartupParameter -SqlInstance $dev2016
+Set-DbaStartupParameter -SqlInstance $dev2016 -TraceFlags 3226 -Confirm:$false
 
 
 # DBA Orphan Files
@@ -90,14 +90,9 @@ $startDbaMigrationSplat = @{
     BackupRestore = $true
     NetworkShare = 'C:\temp\backups'
     NoSaRename = $true
-    NoLinkedServers = $true
-    NoSysDbUserObjects = $true
-    NoCredentials = $true
-    NoBackupDevices = $true
-    NoEndPoints = $true
     WithReplace = $true
     SetSourceReadOnly = $true
+    Verbose = $true
 }
 		
-#Start-DbaMigration @startDbaMigrationSplat -Force | Select * | Out-GridView
-Start-DbaMigration @startDbaMigrationSplat | Select * | Out-GridView
+Start-DbaMigration @startDbaMigrationSplat #| Select * | Out-GridView
